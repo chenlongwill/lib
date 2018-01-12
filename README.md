@@ -1,2 +1,2 @@
 # lib
-lib for beego
+using for beego platform
