@@ -3,9 +3,6 @@ package lib
 import (
 	"crypto/md5"
 	"fmt"
-	"github.com/astaxie/beego/logs"
-	"github.com/mahonia"
-	"gopkg.in/mgo.v2/bson"
 	"io/ioutil"
 	"math/rand"
 	"net/url"
@@ -13,6 +10,10 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/astaxie/beego/logs"
+	"github.com/mahonia"
+	"gopkg.in/mgo.v2/bson"
 )
 
 var ps = fmt.Sprintf
@@ -185,83 +186,83 @@ func CheckArgNotNull(a ...interface{}) bool {
 
 // 结构体参数非空校验
 func CheckStructArgNotNull(stru interface{}, fields ...string) string {
-	// t := reflect.TypeOf(stru).Elem()
-	doc := make(map[string]string)
-	t := reflect.ValueOf(stru)
+	typ := reflect.TypeOf(stru)
+	val := reflect.ValueOf(stru)
 	for _, fname := range fields {
-		t.FieldByName(fname).IsValid()
-		m[fname] = val.FieldByName(fname).Interface()
-	}
-	for i := 0; i < t.NumField(); i++ {
-		if t.Field(i).Tag.Get("description") == "" {
-			doc[t.Field(i).Name] = t.Field(i).Name
-		} else {
-			doc[t.Field(i).Name] = t.Field(i).Tag.Get("description")
+		arg := val.FieldByName(fname).Interface()
+		base, ok := typ.FieldByName(fname)
+		if !ok {
+			continue
 		}
-	}
-	for _, arg := range a {
-		if v, k := doc[reflect.TypeOf(arg).Name()]; k {
-			switch reflect.TypeOf(arg).Kind() {
-			case reflect.String:
-				if arg.(string) == "" {
-					return v
-				} else {
-					reg := `('|and|exec|insert|select|delete|update|count|%|chr|mid|master|truncate|char|declare|;|or|<)`
-					rgx := regexp.MustCompile(reg)
-					if rgx.MatchString(arg.(string)) {
-						return "合理值:" + v
-					}
+		v := base.Tag.Get("description")
+		if v == "" {
+			v = fname
+		}
+		switch val.FieldByName(fname).Kind() {
+		case reflect.String:
+			if arg.(string) == "" {
+				return v
+			} else {
+				reg := `('|and|exec|insert|select|delete|update|count|%|chr|mid|master|truncate|char|declare|;|or|<)`
+				rgx := regexp.MustCompile(reg)
+				if rgx.MatchString(arg.(string)) {
+					return "合理值:" + v
 				}
-			case reflect.Int64:
-				if arg.(int64) == 0 {
-					return v
-				}
-			case reflect.Int32:
-				if arg.(int32) == 0 {
-					return v
-				}
-			case reflect.Int:
-				if arg.(int) == 0 {
-					return v
-				}
-			case reflect.Float32:
-				if arg.(float32) == 0 {
-					return v
-				}
-			case reflect.Float64:
-				if arg.(float64) == 0 {
-					return v
-				}
-			default:
+			}
+		case reflect.Int64:
+			if arg.(int64) == 0 {
 				return v
 			}
+		case reflect.Int32:
+			if arg.(int32) == 0 {
+				return v
+			}
+		case reflect.Int:
+			if arg.(int) == 0 {
+				return v
+			}
+		case reflect.Float32:
+			if arg.(float32) == 0 {
+				return v
+			}
+		case reflect.Float64:
+			if arg.(float64) == 0 {
+				return v
+			}
+		default:
+			return v
 		}
 	}
 	return ""
 }
 
 // 结构体参数非空校验
-func CheckStructStringSql(stru interface{}, a ...string) string {
-	t := reflect.TypeOf(stru).Elem()
-	doc := make(map[string]string)
-	for i := 0; i < t.NumField(); i++ {
-		if t.Field(i).Tag.Get("description") == "" {
-			doc[t.Field(i).Name] = t.Field(i).Name
-		} else {
-			doc[t.Field(i).Name] = t.Field(i).Tag.Get("description")
+func CheckStructStringSql(stru interface{}, fields ...string) string {
+	typ := reflect.TypeOf(stru)
+	val := reflect.ValueOf(stru)
+	for _, fname := range fields {
+		arg := val.FieldByName(fname).Interface()
+		base, ok := typ.FieldByName(fname)
+		if !ok {
+			continue
 		}
-	}
-	for _, arg := range a {
-		if v, k := doc[arg]; k {
-			if arg == "" {
+		v := base.Tag.Get("description")
+		if v == "" {
+			v = fname
+		}
+		switch val.FieldByName(fname).Kind() {
+		case reflect.String:
+			if arg.(string) == "" {
 				return ""
 			} else {
 				reg := `('|and|exec|insert|select|delete|update|count|%|chr|mid|master|truncate|char|declare|;|or|<)`
 				rgx := regexp.MustCompile(reg)
-				if rgx.MatchString(arg) {
+				if rgx.MatchString(arg.(string)) {
 					return "合理值:" + v
 				}
 			}
+		default:
+			return "合理值:" + v
 		}
 	}
 	return ""
