@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"bytes"
 	"crypto/md5"
 	"fmt"
 	"io/ioutil"
@@ -11,14 +12,35 @@ import (
 	"strings"
 	"time"
 
+	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/mahonia"
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/transform"
 	"gopkg.in/mgo.v2/bson"
 )
 
 var ps = fmt.Sprintf
 
-// 定时器
+func UTF8ToGB2312(s []byte) ([]byte, error) {
+	reader := transform.NewReader(bytes.NewReader(s), simplifiedchinese.HZGB2312.NewEncoder())
+	d, e := ioutil.ReadAll(reader)
+	if e != nil {
+		return nil, e
+	}
+	return d, nil
+}
+
+func GB2312ToUTF8(s []byte) ([]byte, error) {
+	reader := transform.NewReader(bytes.NewReader(s), simplifiedchinese.HZGB2312.NewEncoder())
+	d, e := ioutil.ReadAll(reader)
+	if e != nil {
+		return nil, e
+	}
+	return d, nil
+}
+
+// 定时器golang.org/x/text/transform
 func StartTimer(f func()) {
 	go func() {
 		for {
@@ -280,7 +302,7 @@ func SendVcode(telnum string) bool {
 		logs.Error("验证码存储redis失败[%v]", err)
 		return false
 	}
-	return SendMsgToPhone(telnum, fmt.Sprintf("尊敬的客户，您的手机验证码为：%s，本验证码5分钟之内有效。请保证是本人使用，否则请忽略此短信【XX商城】", vcode))
+	return SendMsgToPhone(telnum, fmt.Sprintf("尊敬的客户，您的手机验证码为：%s，本验证码5分钟之内有效。请保证是本人使用，否则请忽略此短信【%s】", vcode, beego.AppConfig.DefaultString("vcode_tag", "通知")))
 }
 func SendMsgToPhone(telnum string, label string) bool {
 	enc := mahonia.NewEncoder("GBK")
@@ -288,7 +310,7 @@ func SendMsgToPhone(telnum string, label string) bool {
 	tmp := fmt.Sprintf("http://baidu.com/get/url?msg=%s", content)
 	vl, _ := url.Parse(tmp)
 	msg := vl.Query().Encode()
-	req := fmt.Sprintf("cmd=send&uid=%s&psw=%s&mobiles=%s&msgid=%0404d%s&%s", "username", "pwd", telnum, time.Now().Unix(), telnum, msg)
+	req := fmt.Sprintf("cmd=send&uid=%s&psw=%s&mobiles=%s&msgid=%0404d%s&%s", beego.AppConfig.String("vcode_key"), beego.AppConfig.String("vcode_pwd"), telnum, time.Now().Unix(), telnum, msg)
 	address := "http://kltx.sms10000.com.cn/sdk/SMS"
 	resp, err := HttpPost(address, "application/x-www-form-urlencoded;charset=GB2312", strings.NewReader(req))
 	if err != nil {
@@ -310,26 +332,23 @@ func SendMsgToPhone(telnum string, label string) bool {
 }
 
 //手机验证码验证
-func CheckVcode(telnum, vcode string) bool {
+func CheckVcode(telnum, vcode string) (err error) {
 	redis := NewRedis("vcode")
 
 	vcodephone, err := redis.GetString(telnum)
 	if err != nil {
-		logs.Error("手机验证码查询失败:", err)
-		return false
+		err = fmt.Errorf("验证码不存在")
+		return
 	}
 	if vcodephone != vcode {
-		logs.Error("手机验证码:[%s != %s]", vcodephone, vcode)
-
-		return false
-
+		err = fmt.Errorf("验证码不存在")
+		return
 	}
 	err = redis.Delete(telnum)
 	if err != nil {
-		logs.Error("[%s]手机验证码redis删除失败:[%v]", telnum, err)
+		err = fmt.Errorf("验证码已过期")
 	}
-	return true
-
+	return
 }
 
 //正则验证必须是数字
