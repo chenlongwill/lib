@@ -1,7 +1,7 @@
 package lib
 
 import (
-	"bytes"
+	// "bytes"
 	"crypto/md5"
 	"fmt"
 	"io/ioutil"
@@ -15,30 +15,30 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/mahonia"
-	"golang.org/x/text/encoding/simplifiedchinese"
-	"golang.org/x/text/transform"
+	// "golang.org/x/text/encoding/simplifiedchinese"
+	// "golang.org/x/text/transform"
 	"gopkg.in/mgo.v2/bson"
 )
 
 var ps = fmt.Sprintf
 
-func UTF8ToGB2312(s []byte) ([]byte, error) {
-	reader := transform.NewReader(bytes.NewReader(s), simplifiedchinese.HZGB2312.NewEncoder())
-	d, e := ioutil.ReadAll(reader)
-	if e != nil {
-		return nil, e
-	}
-	return d, nil
-}
+// func UTF8ToGB2312(s []byte) ([]byte, error) {
+// 	reader := transform.NewReader(bytes.NewReader(s), simplifiedchinese.HZGB2312.NewEncoder())
+// 	d, e := ioutil.ReadAll(reader)
+// 	if e != nil {
+// 		return nil, e
+// 	}
+// 	return d, nil
+// }
 
-func GB2312ToUTF8(s []byte) ([]byte, error) {
-	reader := transform.NewReader(bytes.NewReader(s), simplifiedchinese.HZGB2312.NewEncoder())
-	d, e := ioutil.ReadAll(reader)
-	if e != nil {
-		return nil, e
-	}
-	return d, nil
-}
+// func GB2312ToUTF8(s []byte) ([]byte, error) {
+// 	reader := transform.NewReader(bytes.NewReader(s), simplifiedchinese.HZGB2312.NewEncoder())
+// 	d, e := ioutil.ReadAll(reader)
+// 	if e != nil {
+// 		return nil, e
+// 	}
+// 	return d, nil
+// }
 
 // 定时器golang.org/x/text/transform
 func StartTimer(f func()) {
