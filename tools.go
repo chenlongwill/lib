@@ -142,7 +142,7 @@ func CheckArgPhone(phone string) bool {
 	if phone == "" {
 		return false
 	} else {
-		reg := `^1(3|4|5|7|8|9)\d{9}$`
+		reg := `^1(3|4|5|6|7|8|9)\d{9}$`
 		rgx := regexp.MustCompile(reg)
 		if !rgx.MatchString(phone) {
 			return false
